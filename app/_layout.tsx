@@ -12,10 +12,11 @@ if (!CLERK_PUBLISHABLE_KEY) {
 const RootLayout: React.FC = () => {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <Stack>
-        <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-        <Stack.Screen name='auth' options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name='onboarding' options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name='index' />
+        <Stack.Screen name='(tabs)' />
+        <Stack.Screen name='auth' />
+        <Stack.Screen name='onboarding' />
       </Stack>
     </ClerkProvider>
   );
