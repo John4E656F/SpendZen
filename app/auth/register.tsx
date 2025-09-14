@@ -1,6 +1,7 @@
 import { useClerk, useSignUp, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback, useEffect } from 'react';
+import { saveUserToDb } from '@/lib';
 import { ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import * as WebBrowser from 'expo-web-browser';
@@ -41,11 +42,13 @@ export default function SignUpScreen() {
       });
       if (createdSessionId) {
         await setActive!({ session: createdSessionId });
-        router.replace('/(tabs)/home');
+
         const user = clerk.user;
         if (user) {
+          await saveUserToDb(user);
           console.log(user);
         }
+        // router.replace('/(tabs)/home');
       }
     } catch (err: any) {
       Alert.alert('Google Sign Up Error', err.errors?.message || err.message || 'Unable to sign up with Google');
@@ -80,7 +83,11 @@ export default function SignUpScreen() {
       const completeSignUp = await signUp.attemptEmailAddressVerification({ code });
       if (completeSignUp.status === 'complete') {
         await clerk.setActive({ session: completeSignUp.createdSessionId });
-        router.replace('/(tabs)/home');
+        const user = clerk.user;
+        if (user) {
+          await saveUserToDb(user);
+        }
+        // router.replace('/(tabs)/home');
       } else {
         Alert.alert('Verification failed', 'Please check your code and try again.');
       }
