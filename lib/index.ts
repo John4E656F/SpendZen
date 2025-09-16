@@ -14,4 +14,5 @@ export const getBackendUrl = (): string => {
   return `https://${baseUrl}`;
 };
 
-export { saveUserToDb } from './user';
+export { saveUserToDb, getUserFromDb, checkUserStatus } from './user';
+export { saveGoalToDb } from './goal';

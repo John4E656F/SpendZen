@@ -1,10 +1,14 @@
-import { useSignIn, useSSO } from '@clerk/clerk-expo';
+import { useClerk, useSignIn, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback, useEffect } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+
+import { saveUserToDb, checkUserStatus } from '@/lib/';
+import { useUserStore } from '@/hooks/';
 
 // Preload browser for smoother experience on Android
 const useWarmUpBrowser = () => {
@@ -20,6 +24,7 @@ WebBrowser.maybeCompleteAuthSession();
 export default function LoginScreen() {
   useWarmUpBrowser();
   const { signIn, setActive, isLoaded } = useSignIn();
+  const clerk = useClerk();
   const { startSSOFlow } = useSSO();
   const router = useRouter();
 
@@ -27,24 +32,59 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  async function postLoginFlow(user: any) {
+    try {
+      const clerkId = user.id;
+      const { userExists, hasGoal, user: backendUser } = await checkUserStatus(clerkId);
+      console.log('userExists:', userExists, 'hasGoal:', hasGoal, 'userData:', backendUser);
+
+      if (!userExists) {
+        await saveUserToDb(user);
+        router.replace('/onboarding/onboarding');
+      } else if (!hasGoal) {
+        // Set user info from backend response to Zustand store
+        useUserStore.getState().setUser({
+          clerkId: clerkId,
+          firstName: backendUser.firstName,
+          lastName: backendUser.lastName,
+          fullName: backendUser.fullName,
+          imageUrl: backendUser.imageUrl,
+          email: backendUser.email,
+          _id: backendUser._id, // map backend field 'id' to your _id field if needed
+        });
+        router.replace('/onboarding/onboarding');
+      } else {
+        router.replace('/(tabs)/home');
+      }
+    } catch (error) {
+      console.error('Post login routing error:', error);
+      Alert.alert('Login Error', 'Failed to process login status.');
+    }
+  }
+
   // Google login handler
   const onGoogleSignIn = useCallback(async () => {
     setLoading(true);
     try {
-      const { createdSessionId, setActive } = await startSSOFlow({
+      const { createdSessionId, setActive: setActiveSession } = await startSSOFlow({
         strategy: 'oauth_google',
         redirectUrl: AuthSession.makeRedirectUri(),
       });
-      if (createdSessionId) {
-        await setActive!({ session: createdSessionId });
-        router.replace('/(tabs)/home');
+      if (createdSessionId && setActiveSession) {
+        await setActiveSession({ session: createdSessionId });
+        const user = clerk.user;
+        if (user) {
+          await postLoginFlow(user);
+        } else {
+          // Show error handler
+        }
       }
     } catch (err: any) {
       Alert.alert('Google Sign In Error', err.errors?.[0]?.message || err.message || 'Unable to sign in with Google');
     } finally {
       setLoading(false);
     }
-  }, [startSSOFlow, router]);
+  }, [startSSOFlow, router, signIn]);
 
   // Email/password login handler
   const onLoginPress = async () => {
@@ -57,7 +97,12 @@ export default function LoginScreen() {
       });
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.replace('/(tabs)/home');
+        const user = clerk.user;
+        if (user) {
+          await postLoginFlow(user);
+        } else {
+          // Show error handler
+        }
       } else {
         Alert.alert('Additional verification needed.');
         console.error(JSON.stringify(signInAttempt, null, 2));
@@ -92,7 +137,7 @@ export default function LoginScreen() {
           {loading ? <ActivityIndicator color='#FFFFFF' /> : <Text style={styles.buttonText}>Continue</Text>}
         </TouchableOpacity>
 
-        {/* Google Sign In Button with Icon */}
+        {/* Google Sign In Button */}
         <TouchableOpacity style={[styles.button, styles.googleButton, loading && styles.disabledButton]} onPress={onGoogleSignIn} disabled={loading}>
           <View style={styles.googleContent}>
             <AntDesign name='google' size={22} color='white' style={styles.googleIcon} />

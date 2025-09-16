@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import React from 'react';
-import { Image, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const unstable_settings = {
   headerShown: false,
@@ -25,9 +26,9 @@ const WelcomeScreen: React.FC = () => {
         {/* Action Buttons */}
         <View style={styles.actions}>
           {/* Register Button */}
-          <Link href='/auth/register' asChild>
+          <Link href='/onboarding/welcome' asChild>
             <TouchableOpacity style={styles.registerButton}>
-              <Text style={styles.registerButtonText}>Register</Text>
+              <Text style={styles.registerButtonText}>Get started</Text>
             </TouchableOpacity>
           </Link>
 
@@ -56,11 +57,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F4F8',
   },
   imageWrapper: {
-    marginBottom: 48,
+    marginBottom: 5,
   },
   image: {
-    width: 192,
-    height: 192,
+    width: 400,
+    height: 400,
     borderRadius: 96,
   },
   headline: {

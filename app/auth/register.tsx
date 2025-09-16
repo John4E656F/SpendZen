@@ -2,7 +2,8 @@ import { useClerk, useSignUp, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback, useEffect } from 'react';
 import { saveUserToDb } from '@/lib';
-import { ActivityIndicator, Alert, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
@@ -48,7 +49,7 @@ export default function SignUpScreen() {
           await saveUserToDb(user);
           console.log(user);
         }
-        // router.replace('/(tabs)/home');
+        router.replace('/onboarding/onboarding');
       }
     } catch (err: any) {
       Alert.alert('Google Sign Up Error', err.errors?.message || err.message || 'Unable to sign up with Google');
@@ -87,7 +88,7 @@ export default function SignUpScreen() {
         if (user) {
           await saveUserToDb(user);
         }
-        // router.replace('/(tabs)/home');
+        router.replace('/onboarding/onboarding');
       } else {
         Alert.alert('Verification failed', 'Please check your code and try again.');
       }
@@ -155,8 +156,14 @@ export default function SignUpScreen() {
         {/* Google Sign Up with Icon */}
         <TouchableOpacity style={[styles.button, styles.googleButton, loading && styles.disabledButton]} onPress={onGoogleSignUp} disabled={loading}>
           <View style={styles.googleContent}>
-            <AntDesign name='google' size={22} color='white' style={styles.googleIcon} />
-            {loading ? <ActivityIndicator color='#FFFFFF' /> : <Text style={styles.buttonText}>Sign Up with Google</Text>}
+            {loading ? (
+              <ActivityIndicator color='#FFFFFF' />
+            ) : (
+              <Text style={styles.buttonText}>
+                {' '}
+                <AntDesign name='google' size={22} color='white' style={styles.googleIcon} /> Sign Up with Google
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSignOut}>
